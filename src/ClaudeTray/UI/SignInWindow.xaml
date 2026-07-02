@@ -1,0 +1,39 @@
+<Window x:Class="ClaudeTray.UI.SignInWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Connect claude-tray" SizeToContent="Height" Width="420"
+        WindowStartupLocation="CenterScreen" ResizeMode="NoResize">
+    <StackPanel Margin="20">
+        <TextBlock Text="Connect your Claude account" FontSize="16" FontWeight="SemiBold"/>
+        <TextBlock Text="claude-tray reads your usage limits — nothing else."
+                   Foreground="Gray" Margin="0,4,0,14" TextWrapping="Wrap"/>
+
+        <Button x:Name="BrowserButton" Click="Browser_Click" Padding="12,8" FontWeight="SemiBold"
+                HorizontalContentAlignment="Center">
+            <TextBlock Text="Sign in with Claude (opens browser)"/>
+        </Button>
+
+        <Separator Margin="0,16"/>
+        <TextBlock Text="Or import existing Claude Code credentials" FontWeight="SemiBold"/>
+        <TextBlock x:Name="ScanText" Foreground="Gray" FontSize="11" Margin="0,2,0,6"
+                   Text="Scanning Windows and WSL for .claude/.credentials.json …" TextWrapping="Wrap"/>
+        <DockPanel>
+            <Button x:Name="ImportButton" Content="Import" DockPanel.Dock="Right" Padding="12,4"
+                    Margin="8,0,0,0" Click="Import_Click" IsEnabled="False"/>
+            <ComboBox x:Name="CredentialPaths"/>
+        </DockPanel>
+
+        <Expander Header="Or paste a token manually" Margin="0,16,0,0">
+            <StackPanel Margin="0,8,0,0">
+                <TextBlock Text="Access token (sk-ant-oat…)" FontSize="11"/>
+                <TextBox x:Name="AccessTokenBox" Margin="0,2,0,8"/>
+                <TextBlock Text="Refresh token (sk-ant-ort…, optional)" FontSize="11"/>
+                <TextBox x:Name="RefreshTokenBox" Margin="0,2,0,8"/>
+                <Button Content="Use these tokens" Click="Paste_Click" Padding="12,4"
+                        HorizontalAlignment="Left"/>
+            </StackPanel>
+        </Expander>
+
+        <TextBlock x:Name="StatusText" Foreground="#C0392B" TextWrapping="Wrap" Margin="0,12,0,0"/>
+    </StackPanel>
+</Window>

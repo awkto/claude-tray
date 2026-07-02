@@ -1,0 +1,64 @@
+<Window x:Class="ClaudeTray.UI.FlyoutWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Claude usage"
+        WindowStyle="None" ResizeMode="NoResize" AllowsTransparency="True"
+        Background="Transparent" SizeToContent="WidthAndHeight"
+        Topmost="True" ShowInTaskbar="False" ShowActivated="True">
+    <Border x:Name="RootBorder" CornerRadius="10" Padding="16,12,16,12" Margin="12"
+            Background="#F2202124" BorderBrush="#40FFFFFF" BorderThickness="1">
+        <Border.Effect>
+            <DropShadowEffect BlurRadius="14" ShadowDepth="2" Opacity="0.45"/>
+        </Border.Effect>
+        <StackPanel MinWidth="220">
+            <DockPanel Margin="0,0,0,10">
+                <TextBlock x:Name="TitleText" Text="Claude usage" FontSize="13" FontWeight="SemiBold"
+                           Foreground="#FFF3F4F6" VerticalAlignment="Center"/>
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" DockPanel.Dock="Right">
+                    <Button x:Name="RefreshButton" Content="&#x21BB;" Click="Refresh_Click"
+                            Style="{StaticResource IconButton}" ToolTip="Refresh now"/>
+                    <Button x:Name="SettingsButton" Content="&#x2699;" Click="Settings_Click"
+                            Style="{StaticResource IconButton}" ToolTip="Settings"/>
+                </StackPanel>
+            </DockPanel>
+
+            <TextBlock x:Name="StatusText" Foreground="#FF9CA3AF" FontSize="11" TextWrapping="Wrap"
+                       MaxWidth="260" Margin="0,0,0,8" Visibility="Collapsed"/>
+            <Button x:Name="SignInButton" Content="Sign in with Claude" Click="SignIn_Click"
+                    Visibility="Collapsed" Margin="0,2,0,8" Padding="10,6"
+                    HorizontalAlignment="Center"/>
+
+            <ItemsControl x:Name="Bars">
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center"/>
+                    </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <StackPanel Width="66" Margin="4,0">
+                            <Grid Height="92" Width="26" HorizontalAlignment="Center">
+                                <Border Background="#33808080" CornerRadius="6"/>
+                                <Border Background="{Binding BarBrush}" CornerRadius="6"
+                                        Height="{Binding BarHeight}" VerticalAlignment="Bottom"
+                                        ToolTip="{Binding Tooltip}"/>
+                            </Grid>
+                            <TextBlock Text="{Binding PercentText}" FontSize="13" FontWeight="SemiBold"
+                                       Foreground="{Binding BarBrush}" HorizontalAlignment="Center" Margin="0,6,0,0"/>
+                            <TextBlock Text="{Binding Label}" FontSize="11" Foreground="#FFD1D5DB"
+                                       HorizontalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+                            <TextBlock Text="{Binding ResetText}" FontSize="10" Foreground="#FF9CA3AF"
+                                       HorizontalAlignment="Center"/>
+                        </StackPanel>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+
+            <TextBlock x:Name="FooterText" Foreground="#FF9CA3AF" FontSize="10.5"
+                       HorizontalAlignment="Center" Margin="0,10,0,0" Visibility="Collapsed"/>
+            <TextBlock x:Name="UpdateText" Foreground="#FF60A5FA" FontSize="10.5"
+                       HorizontalAlignment="Center" Margin="0,4,0,0" Visibility="Collapsed"
+                       Cursor="Hand" MouseLeftButtonUp="Update_Click"/>
+        </StackPanel>
+    </Border>
+</Window>

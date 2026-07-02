@@ -46,9 +46,28 @@ show up automatically without an app update. No token-burning probe requests (un
 
 See [docs/DESIGN.md](docs/DESIGN.md) for the full design.
 
+## Install
+
+Grab `claude-tray-setup-<version>.exe` from the [latest release](https://github.com/awkto/claude-tray/releases/latest)
+— per-user install, no admin needed, optional start-at-login. A portable zip (win-x64 and
+win-arm64) is published alongside. Binaries are not yet code-signed (tracked in issues), so
+SmartScreen may warn on first run.
+
+On first launch you'll get a connect window: **Sign in with Claude** (browser OAuth), or import
+existing Claude Code credentials — the app auto-scans `%USERPROFILE%\.claude` *and every WSL
+distro's* home directories.
+
+## Building from source
+
+```
+dotnet build src/ClaudeTray/ClaudeTray.csproj -c Release
+```
+
+Requires the .NET 8 SDK. Cross-compiling from Linux works (`EnableWindowsTargeting` is set).
+
 ## Development status
 
-Planning/scaffolding. Work is tracked as issues on a self-hosted GitLab:
+Early releases. Work is tracked as issues on a self-hosted GitLab:
 `gitlab.dnsif.ca/github/claude-tray`.
 
 ## License

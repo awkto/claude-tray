@@ -1,0 +1,74 @@
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # MinVer derives the version from the tag
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Version from tag
+        id: ver
+        shell: bash
+        run: echo "version=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
+
+      - name: Publish win-x64
+        run: >
+          dotnet publish src/ClaudeTray/ClaudeTray.csproj -c Release -r win-x64 --self-contained
+          -p:PublishSingleFile=true -p:EnableCompressionInSingleFile=true
+          -p:IncludeNativeLibrariesForSelfExtract=true -p:DebugType=none
+          -o publish/win-x64
+
+      - name: Publish win-arm64
+        run: >
+          dotnet publish src/ClaudeTray/ClaudeTray.csproj -c Release -r win-arm64 --self-contained
+          -p:PublishSingleFile=true -p:EnableCompressionInSingleFile=true
+          -p:IncludeNativeLibrariesForSelfExtract=true -p:DebugType=none
+          -o publish/win-arm64
+
+      # Code signing (issue #11): once Azure Trusted Signing is set up, sign
+      # publish/**/claude-tray.exe here with azure/trusted-signing-action, and the
+      # installer after the ISCC step. Guarded behind repo secrets AZURE_TENANT_ID etc.
+
+      - name: Build installer
+        shell: pwsh
+        run: |
+          choco install innosetup -y --no-progress
+          & "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe" `
+            /DAppVersion=${{ steps.ver.outputs.version }} `
+            /DPublishDir=${{ github.workspace }}\publish\win-x64 `
+            installer\claude-tray.iss
+
+      - name: Package artifacts
+        shell: pwsh
+        run: |
+          $v = "${{ steps.ver.outputs.version }}"
+          New-Item -ItemType Directory dist | Out-Null
+          Compress-Archive -Path publish/win-x64/* -DestinationPath "dist/claude-tray-$v-win-x64.zip"
+          Compress-Archive -Path publish/win-arm64/* -DestinationPath "dist/claude-tray-$v-win-arm64.zip"
+          Move-Item "installer/Output/claude-tray-setup-$v.exe" dist/
+          Get-ChildItem dist | Get-FileHash -Algorithm SHA256 |
+            ForEach-Object { "{0}  {1}" -f $_.Hash.ToLower(), (Split-Path $_.Path -Leaf) } |
+            Set-Content dist/SHA256SUMS.txt
+
+      - name: Create GitHub release
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: >
+          gh release create "$env:GITHUB_REF_NAME"
+          --title "claude-tray $env:GITHUB_REF_NAME"
+          --generate-notes
+          dist/*
