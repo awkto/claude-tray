@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schemalist>
+  <schema id="org.gnome.shell.extensions.claude-tray"
+          path="/org/gnome/shell/extensions/claude-tray/">
+    <key name="poll-interval-seconds" type="i">
+      <default>60</default>
+      <range min="10" max="600"/>
+      <summary>How often to poll the usage endpoint, in seconds</summary>
+    </key>
+    <key name="alert-threshold" type="i">
+      <default>90</default>
+      <range min="50" max="99"/>
+      <summary>Percentage at which the indicator turns red and a notification fires</summary>
+    </key>
+    <key name="high-threshold" type="i">
+      <default>80</default>
+      <range min="30" max="98"/>
+      <summary>Percentage at which the indicator turns orange</summary>
+    </key>
+    <key name="notify-threshold" type="b">
+      <default>true</default>
+      <summary>Notify when a limit crosses the alert threshold</summary>
+    </key>
+    <key name="notify-exceeded" type="b">
+      <default>true</default>
+      <summary>Notify when a limit reaches 100%</summary>
+    </key>
+    <key name="notify-reset" type="b">
+      <default>false</default>
+      <summary>Notify when a limit window resets</summary>
+    </key>
+    <key name="mute-all" type="b">
+      <default>false</default>
+      <summary>Mute all notifications</summary>
+    </key>
+    <key name="show-percent-label" type="b">
+      <default>true</default>
+      <summary>Show the worst bucket's percentage next to the panel icon</summary>
+    </key>
+    <key name="credentials-path" type="s">
+      <default>""</default>
+      <summary>Path to Claude Code .credentials.json (empty = ~/.claude/.credentials.json)</summary>
+    </key>
+  </schema>
+</schemalist>

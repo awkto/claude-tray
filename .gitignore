@@ -5,3 +5,5 @@ obj/
 publish/
 *.zip
 installer/Output/
+dist/
+gnome-extension/schemas/gschemas.compiled

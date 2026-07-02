@@ -51,6 +51,25 @@ See [docs/DESIGN.md](docs/DESIGN.md) for the full design.
 
 ## Install
 
+### Ubuntu / GNOME (24.04, 26.04, GNOME 45–50)
+
+The Ubuntu version is a GNOME Shell extension: a color-coded Clawd indicator in the top bar
+with a popup showing the vertical usage bars, and desktop notifications at your alert threshold.
+It reads (and refreshes) your Claude Code credentials from `~/.claude/.credentials.json` — just
+be signed in with `claude login`.
+
+```bash
+wget https://github.com/awkto/claude-tray/releases/latest/download/claude-tray@awkto.github.io.shell-extension.zip
+gnome-extensions install --force claude-tray@awkto.github.io.shell-extension.zip
+# log out and back in (Wayland), then:
+gnome-extensions enable claude-tray@awkto.github.io
+```
+
+Settings (thresholds, poll interval, notifications) live under
+`gnome-extensions prefs claude-tray@awkto.github.io`. Submission to extensions.gnome.org is planned.
+
+### Windows
+
 Grab `claude-tray-setup-<version>.exe` from the [latest release](https://github.com/awkto/claude-tray/releases/latest)
 — per-user install, no admin needed, optional start-at-login. A portable zip (win-x64 and
 win-arm64) is published alongside. Binaries are not yet code-signed (tracked in issues), so

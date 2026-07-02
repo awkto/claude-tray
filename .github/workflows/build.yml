@@ -20,3 +20,15 @@ jobs:
 
       - name: Build
         run: dotnet build src/ClaudeTray/ClaudeTray.csproj -c Release
+
+  gnome-extension:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate and pack
+        run: |
+          for f in gnome-extension/extension.js gnome-extension/prefs.js; do
+            cp "$f" /tmp/check.mjs && node --check /tmp/check.mjs
+          done
+          bash tools/pack-gnome.sh

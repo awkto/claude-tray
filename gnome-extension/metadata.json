@@ -1,0 +1,9 @@
+{
+  "uuid": "claude-tray@awkto.github.io",
+  "name": "Claude Usage Tray",
+  "description": "Monitor Claude usage limits from the top bar: color-coded Clawd indicator (green/orange/red), popup with per-bucket vertical bars (session, weekly, Fable, ...), and notifications when a limit crosses your alert threshold. Reads Claude Code credentials from ~/.claude/.credentials.json.",
+  "shell-version": ["45", "46", "47", "48", "49", "50"],
+  "url": "https://github.com/awkto/claude-tray",
+  "settings-schema": "org.gnome.shell.extensions.claude-tray",
+  "gettext-domain": "claude-tray"
+}

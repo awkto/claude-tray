@@ -1,0 +1,56 @@
+.ct-panel-label {
+  margin-left: 4px;
+  font-weight: bold;
+}
+
+.ct-text-ok { color: #22c55e; }
+.ct-text-high { color: #f97316; }
+.ct-text-critical { color: #ef4444; }
+.ct-text-stale { color: #9ca3af; }
+
+.ct-bars {
+  padding: 10px 6px 6px 6px;
+  spacing: 14px;
+}
+
+.ct-bar-column {
+  spacing: 4px;
+}
+
+.ct-bar-track {
+  background-color: rgba(128, 128, 128, 0.25);
+  border-radius: 6px;
+}
+
+.ct-bar-fill {
+  border-radius: 6px;
+}
+
+.ct-fill-ok { background-color: #22c55e; }
+.ct-fill-warn { background-color: #eab308; }
+.ct-fill-high { background-color: #f97316; }
+.ct-fill-critical { background-color: #ef4444; }
+
+.ct-bar-percent {
+  font-weight: bold;
+  font-size: 11pt;
+  text-align: center;
+}
+
+.ct-bar-name {
+  font-size: 9pt;
+  color: #d1d5db;
+  text-align: center;
+}
+
+.ct-bar-reset {
+  font-size: 8pt;
+  color: #9ca3af;
+  text-align: center;
+}
+
+.ct-status {
+  font-size: 9pt;
+  color: #9ca3af;
+  padding: 4px 10px;
+}
