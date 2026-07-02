@@ -1,5 +1,8 @@
 # claude-tray
 
+<img width="431" height="239" alt="image" src="https://github.com/user-attachments/assets/da675a12-8180-423b-95f7-a87063cf64fa" />
+
+
 A tiny, native Windows system-tray monitor for Claude usage limits.
 
 Successor to / redesign of [Clawdmeter-Windows](https://github.com/weltern/Clawdmeter-Windows), rebuilt as a
