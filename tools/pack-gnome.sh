@@ -11,6 +11,7 @@ UUID="claude-tray@awkto.github.io"
 glib-compile-schemas --strict "$SRC/schemas/"
 
 mkdir -p "$OUT"
+OUT="$(cd "$OUT" && pwd)" # absolute — the zip step below runs from another directory
 rm -f "$OUT/$UUID.shell-extension.zip"
 (cd "$SRC" && python3 -m zipfile -c "$OUT/$UUID.shell-extension.zip" \
     extension.js prefs.js metadata.json stylesheet.css icons schemas)
