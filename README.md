@@ -65,11 +65,6 @@ dotnet build src/ClaudeTray/ClaudeTray.csproj -c Release
 
 Requires the .NET 8 SDK. Cross-compiling from Linux works (`EnableWindowsTargeting` is set).
 
-## Development status
-
-Early releases. Work is tracked as issues on a self-hosted GitLab:
-`gitlab.dnsif.ca/github/claude-tray`.
-
 ## License
 
 MIT. The Clawd mascot tray icon comes from
