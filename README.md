@@ -72,4 +72,5 @@ Early releases. Work is tracked as issues on a self-hosted GitLab:
 
 ## License
 
-MIT
+MIT. The Clawd mascot tray icon comes from
+[Clawdmeter](https://github.com/weltern/Clawdmeter-Windows) by weltern (MIT).

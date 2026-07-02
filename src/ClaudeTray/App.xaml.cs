@@ -11,7 +11,6 @@ public partial class App : Application
 {
     private Mutex? _singleInstance;
     private TaskbarIcon? _tray;
-    private System.Drawing.Icon? _currentIcon;
 
     private readonly HttpClient _http = new() { Timeout = TimeSpan.FromSeconds(30) };
     private SettingsService _settings = null!;
@@ -66,7 +65,7 @@ public partial class App : Application
             ContextMenu = menu,
         };
         _tray.TrayLeftMouseUp += (_, _) => ShowFlyout();
-        SetTrayIcon(TrayIconRenderer.Render(null, UsageState.Stale));
+        _tray.Icon = TrayIconRenderer.Render(UsageState.Stale);
         _tray.ForceCreate();
     }
 
@@ -101,11 +100,11 @@ public partial class App : Application
         switch (_poller.State)
         {
             case PollerState.SignedOut:
-                SetTrayIcon(TrayIconRenderer.Render(null, UsageState.Stale));
+                _tray.Icon = TrayIconRenderer.Render(UsageState.Stale);
                 _tray.ToolTipText = "claude-tray — not signed in";
                 return;
             case PollerState.Error when snapshot is null:
-                SetTrayIcon(TrayIconRenderer.Render(null, UsageState.Stale));
+                _tray.Icon = TrayIconRenderer.Render(UsageState.Stale);
                 _tray.ToolTipText = "claude-tray — can't reach Anthropic";
                 return;
         }
@@ -113,7 +112,7 @@ public partial class App : Application
 
         var worst = snapshot.Worst;
         var state = Severity.Classify(worst?.Percent, s);
-        SetTrayIcon(TrayIconRenderer.Render(worst?.Percent, state));
+        _tray.Icon = TrayIconRenderer.Render(state);
 
         var parts = snapshot.Limits
             .Where(l => l.Percent is not null)
@@ -121,13 +120,6 @@ public partial class App : Application
         var tip = string.Join(" · ", parts);
         _tray.ToolTipText = string.IsNullOrEmpty(tip) ? "claude-tray" :
             _poller.State == PollerState.Error ? $"{tip} (stale)" : tip;
-    }
-
-    private void SetTrayIcon(System.Drawing.Icon icon)
-    {
-        _tray!.Icon = icon;
-        _currentIcon?.Dispose();
-        _currentIcon = icon;
     }
 
     private void ShowFlyout()
@@ -170,7 +162,6 @@ public partial class App : Application
     {
         _poller?.Dispose();
         _tray?.Dispose();
-        _currentIcon?.Dispose();
         _singleInstance?.Dispose();
         base.OnExit(e);
     }
