@@ -297,22 +297,19 @@ class UsageIndicator extends PanelMenu.Button {
     }
 
     _updatePanel() {
-        const worst = this._worst();
         let icon = 'gray';
         let textClass = 'ct-text-stale';
         let labelText = '';
         const mono = this._settings.get_boolean('monochrome-icon');
         const picked = this._picked();
-        if (worst) {
-            // Icon severity always tracks the worst bucket, even when the label shows
-            // a specific one — otherwise picking "weekly" would hide a red session.
-            const state = this._classify(worst.percent);
-            icon = state === 'critical' ? 'red' : state === 'high' ? 'orange' : 'green';
-        }
         if (picked) {
-            const pickedState = this._classify(picked.percent);
-            textClass = pickedState === 'critical' ? 'ct-text-critical'
-                : pickedState === 'high' ? 'ct-text-high' : 'ct-text-ok';
+            // Icon colour and number describe the same bucket — a colour that reports
+            // one limit while the number reports another is worse than the blind spot
+            // it avoids. Per-bucket notifications still cover the limits not shown here.
+            const state = this._classify(picked.percent);
+            icon = state === 'critical' ? 'red' : state === 'high' ? 'orange' : 'green';
+            textClass = state === 'critical' ? 'ct-text-critical'
+                : state === 'high' ? 'ct-text-high' : 'ct-text-ok';
             labelText = `${Math.round(picked.percent)}%`;
         }
         // Monochrome mode pins the icon white in every state, including the
