@@ -5,6 +5,16 @@ using ClaudeTray.Models;
 
 namespace ClaudeTray.Services;
 
+/// <summary>The usage endpoint rate-limited us. <see cref="RetryAfter"/> is the server's
+/// hint, if it sent a usable one — it often sends "Retry-After: 0", which is no hint at all.</summary>
+public sealed class RateLimitException : Exception
+{
+    public TimeSpan? RetryAfter { get; }
+
+    public RateLimitException(TimeSpan? retryAfter)
+        : base("Rate limited by Anthropic.") => RetryAfter = retryAfter;
+}
+
 public sealed class UsageClient
 {
     private const string UsageUrl = "https://api.anthropic.com/api/oauth/usage";
@@ -47,6 +57,14 @@ public sealed class UsageClient
         req.Headers.TryAddWithoutValidation("anthropic-beta", "oauth-2025-04-20");
         using var resp = await _http.SendAsync(req, ct);
         if (resp.StatusCode == HttpStatusCode.Unauthorized) return null;
+        if (resp.StatusCode == HttpStatusCode.TooManyRequests)
+        {
+            var retryAfter = resp.Headers.RetryAfter?.Delta
+                             ?? (resp.Headers.RetryAfter?.Date is { } date
+                                 ? date - DateTimeOffset.UtcNow
+                                 : null);
+            throw new RateLimitException(retryAfter > TimeSpan.Zero ? retryAfter : null);
+        }
         resp.EnsureSuccessStatusCode();
         return await resp.Content.ReadAsStringAsync(ct);
     }

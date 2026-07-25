@@ -68,6 +68,10 @@ public partial class FlyoutWindow : Window
                 StatusText.Text = $"Stale — last updated {snapshot.FetchedAt.ToLocalTime():HH:mm}";
                 StatusText.Visibility = Visibility.Visible;
                 break;
+            case PollerState.RateLimited:
+                StatusText.Text = _poller.LastError ?? "Rate limited.";
+                StatusText.Visibility = Visibility.Visible;
+                break;
         }
 
         var items = new List<BarItem>();

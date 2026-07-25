@@ -6,7 +6,8 @@ namespace ClaudeTray.Services;
 
 public sealed class AppSettings
 {
-    public int PollIntervalSeconds { get; set; } = 60;
+    // 60s burns roughly 60 requests/hour, which the usage endpoint rate-limits.
+    public int PollIntervalSeconds { get; set; } = 300;
     public int AlertThresholdPercent { get; set; } = 90;
     public int WarnThresholdPercent { get; set; } = 60;
     public int HighThresholdPercent { get; set; } = 80;

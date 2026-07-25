@@ -107,6 +107,10 @@ public partial class App : Application
                 _tray.Icon = TrayIconRenderer.Render(UsageState.Stale);
                 _tray.ToolTipText = "claude-tray — can't reach Anthropic";
                 return;
+            case PollerState.RateLimited when snapshot is null:
+                _tray.Icon = TrayIconRenderer.Render(UsageState.Stale);
+                _tray.ToolTipText = $"claude-tray — {_poller.LastError}";
+                return;
         }
         if (snapshot is null) return;
 

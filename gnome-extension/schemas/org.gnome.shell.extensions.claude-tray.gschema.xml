@@ -3,7 +3,7 @@
   <schema id="org.gnome.shell.extensions.claude-tray"
           path="/org/gnome/shell/extensions/claude-tray/">
     <key name="poll-interval-seconds" type="i">
-      <default>60</default>
+      <default>300</default>
       <range min="10" max="600"/>
       <summary>How often to poll the usage endpoint, in seconds</summary>
     </key>
