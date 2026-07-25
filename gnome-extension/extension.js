@@ -18,8 +18,19 @@ const TOKEN_URL = 'https://console.anthropic.com/v1/oauth/token';
 const CLIENT_ID = '9d1c250a-e61b-44d9-88ed-5944d1962f5e'; // Claude Code public OAuth client
 const BAR_W = 22;
 const BAR_H = 80;
+// Opening the popup refreshes, but not if we just polled — otherwise every
+// glance at the bars costs a request and the endpoint rate-limits us.
+const MENU_POLL_MIN_GAP_MS = 60_000;
+const BACKOFF_BASE_S = 60;
+const BACKOFF_MAX_S = 1800;
 
 class AuthError extends Error {}
+class RateLimitError extends Error {
+    constructor(retryAfterS) {
+        super('Rate limited by Anthropic');
+        this.retryAfterS = retryAfterS;
+    }
+}
 
 function limitKey(limit) {
     const model = limit.scope?.model?.display_name;
@@ -57,6 +68,9 @@ class UsageIndicator extends PanelMenu.Button {
         this._snapshot = null;
         this._status = 'Waiting for first poll…';
         this._timeoutId = 0;
+        this._lastAttemptAt = 0;
+        this._backoffUntil = 0;
+        this._backoffLevel = 0;
 
         this._icons = {};
         for (const name of ['green', 'orange', 'red', 'gray'])
@@ -80,7 +94,7 @@ class UsageIndicator extends PanelMenu.Button {
             if (key === 'show-percent-label') this._updatePanel();
         });
         this.menu.connect('open-state-changed', (_menu, open) => {
-            if (open) this._poll();
+            if (open) this._poll({opportunistic: true});
         });
 
         this._poll();
@@ -188,6 +202,7 @@ class UsageIndicator extends PanelMenu.Button {
                     const bytes = session.send_and_read_finish(res);
                     resolve({
                         status: msg.get_status(),
+                        retryAfterS: Number(msg.get_response_headers().get_one('retry-after')) || 0,
                         text: new TextDecoder().decode(bytes.get_data() ?? new Uint8Array()),
                     });
                 } catch (e) {
@@ -197,14 +212,28 @@ class UsageIndicator extends PanelMenu.Button {
         });
     }
 
-    async _poll() {
+    async _poll({opportunistic = false} = {}) {
         if (this._polling) return;
+        const now = Date.now();
+        // A 429 costs us the next window too, so honour the backoff for every
+        // caller — timer, popup and the manual Refresh item alike.
+        if (now < this._backoffUntil) {
+            this._updateMenu();
+            return;
+        }
+        if (opportunistic && now - this._lastAttemptAt < MENU_POLL_MIN_GAP_MS) {
+            this._updateMenu();
+            return;
+        }
         this._polling = true;
+        this._lastAttemptAt = now;
         try {
             const token = await this._getAccessToken();
-            const {status, text} = await this._request('GET', USAGE_URL, token);
+            const {status, retryAfterS, text} = await this._request('GET', USAGE_URL, token);
             if (status === 401)
                 throw new AuthError('Usage request unauthorized. Run `claude login`.');
+            if (status === 429)
+                throw new RateLimitError(retryAfterS);
             if (status !== 200)
                 throw new Error(`Usage endpoint returned ${status}`);
 
@@ -215,11 +244,22 @@ class UsageIndicator extends PanelMenu.Button {
                 fetchedAt: new Date(),
             };
             this._status = null;
+            this._backoffLevel = 0;
+            this._backoffUntil = 0;
             this._processNotifications(this._snapshot);
         } catch (e) {
             if (e instanceof AuthError) {
                 this._snapshot = null;
                 this._status = e.message;
+            } else if (e instanceof RateLimitError) {
+                // Keep the stale snapshot — the bars are still roughly right.
+                this._backoffLevel = Math.min(this._backoffLevel + 1, 6);
+                const delayS = Math.min(
+                    Math.max(e.retryAfterS, BACKOFF_BASE_S * 2 ** (this._backoffLevel - 1)),
+                    BACKOFF_MAX_S);
+                this._backoffUntil = Date.now() + delayS * 1000;
+                const at = new Date(this._backoffUntil);
+                this._status = `Rate limited — retrying at ${String(at.getHours()).padStart(2, '0')}:${String(at.getMinutes()).padStart(2, '0')}`;
             } else {
                 // Keep the stale snapshot; just surface the problem.
                 this._status = this._snapshot
