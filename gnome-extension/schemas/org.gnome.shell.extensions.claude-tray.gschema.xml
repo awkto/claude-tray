@@ -37,6 +37,10 @@
       <default>true</default>
       <summary>Show the worst bucket's percentage next to the panel icon</summary>
     </key>
+    <key name="monochrome-icon" type="b">
+      <default>false</default>
+      <summary>Keep the panel icon white instead of tinting it green/orange/red</summary>
+    </key>
     <key name="credentials-path" type="s">
       <default>""</default>
       <summary>Path to Claude Code .credentials.json (empty = ~/.claude/.credentials.json)</summary>

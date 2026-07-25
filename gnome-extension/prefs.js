@@ -45,6 +45,7 @@ export default class ClaudeTrayPreferences extends ExtensionPreferences {
         general.add(interval);
 
         addSwitch(general, settings, 'show-percent-label', 'Show percentage in the top bar');
+        addSwitch(general, settings, 'monochrome-icon', 'Keep the icon white (no colour changes)');
 
         const creds = new Adw.EntryRow({
             title: 'Credentials file (empty = ~/.claude/.credentials.json)',

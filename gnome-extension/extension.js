@@ -73,7 +73,7 @@ class UsageIndicator extends PanelMenu.Button {
         this._backoffLevel = 0;
 
         this._icons = {};
-        for (const name of ['green', 'orange', 'red', 'gray'])
+        for (const name of ['green', 'orange', 'red', 'gray', 'white'])
             this._icons[name] = Gio.icon_new_for_string(`${ext.path}/icons/clawd-${name}.png`);
 
         const box = new St.BoxLayout();
@@ -91,7 +91,7 @@ class UsageIndicator extends PanelMenu.Button {
 
         this._settingsChangedId = this._settings.connect('changed', (_s, key) => {
             if (key === 'poll-interval-seconds') this._reschedule();
-            if (key === 'show-percent-label') this._updatePanel();
+            if (key === 'show-percent-label' || key === 'monochrome-icon') this._updatePanel();
         });
         this.menu.connect('open-state-changed', (_menu, open) => {
             if (open) this._poll({opportunistic: true});
@@ -292,12 +292,16 @@ class UsageIndicator extends PanelMenu.Button {
         let icon = 'gray';
         let textClass = 'ct-text-stale';
         let labelText = '';
+        const mono = this._settings.get_boolean('monochrome-icon');
         if (worst) {
             const state = this._classify(worst.percent);
             icon = state === 'critical' ? 'red' : state === 'high' ? 'orange' : 'green';
             textClass = state === 'critical' ? 'ct-text-critical' : state === 'high' ? 'ct-text-high' : 'ct-text-ok';
             labelText = `${Math.round(worst.percent)}%`;
         }
+        // Monochrome mode pins the icon white in every state, including the
+        // "no data" grey — only the icon; the percentage keeps its colour.
+        if (mono) icon = 'white';
         this._panelIcon.gicon = this._icons[icon];
         this._panelLabel.style_class = `ct-panel-label ${textClass}`;
         this._panelLabel.text = this._settings.get_boolean('show-percent-label') ? labelText : '';
