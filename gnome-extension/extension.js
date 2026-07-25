@@ -91,7 +91,8 @@ class UsageIndicator extends PanelMenu.Button {
 
         this._settingsChangedId = this._settings.connect('changed', (_s, key) => {
             if (key === 'poll-interval-seconds') this._reschedule();
-            if (key === 'show-percent-label' || key === 'monochrome-icon') this._updatePanel();
+            if (key === 'show-percent-label' || key === 'monochrome-icon' || key === 'percent-bucket')
+                this._updatePanel();
         });
         this.menu.connect('open-state-changed', (_menu, open) => {
             if (open) this._poll({opportunistic: true});
@@ -287,17 +288,32 @@ class UsageIndicator extends PanelMenu.Button {
         return this._snapshot.limits.reduce((a, b) => (b.percent > a.percent ? b : a));
     }
 
+    // The bucket the panel percentage tracks. limits[] is dynamic — a chosen bucket
+    // can be absent from a response — so anything unresolved falls back to the worst.
+    _picked() {
+        const bucket = this._settings.get_string('percent-bucket');
+        if (bucket === 'worst') return this._worst();
+        return this._snapshot?.limits.find(l => l.kind === bucket) ?? this._worst();
+    }
+
     _updatePanel() {
         const worst = this._worst();
         let icon = 'gray';
         let textClass = 'ct-text-stale';
         let labelText = '';
         const mono = this._settings.get_boolean('monochrome-icon');
+        const picked = this._picked();
         if (worst) {
+            // Icon severity always tracks the worst bucket, even when the label shows
+            // a specific one — otherwise picking "weekly" would hide a red session.
             const state = this._classify(worst.percent);
             icon = state === 'critical' ? 'red' : state === 'high' ? 'orange' : 'green';
-            textClass = state === 'critical' ? 'ct-text-critical' : state === 'high' ? 'ct-text-high' : 'ct-text-ok';
-            labelText = `${Math.round(worst.percent)}%`;
+        }
+        if (picked) {
+            const pickedState = this._classify(picked.percent);
+            textClass = pickedState === 'critical' ? 'ct-text-critical'
+                : pickedState === 'high' ? 'ct-text-high' : 'ct-text-ok';
+            labelText = `${Math.round(picked.percent)}%`;
         }
         // Monochrome mode pins the icon white in every state, including the
         // "no data" grey — only the icon; the percentage keeps its colour.

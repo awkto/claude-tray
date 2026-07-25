@@ -32,6 +32,16 @@
         </DockPanel>
 
         <TextBlock Text="General" FontWeight="SemiBold" Margin="0,12,0,6"/>
+        <CheckBox x:Name="PercentBox" Content="Show the percentage on the tray icon" Margin="0,4"/>
+        <DockPanel Margin="0,2">
+            <TextBlock Text="Percentage shows" Width="160" VerticalAlignment="Center"/>
+            <ComboBox x:Name="BucketCombo">
+                <ComboBoxItem Content="Worst (whichever is highest)"/>
+                <ComboBoxItem Content="Session (5-hour)"/>
+                <ComboBoxItem Content="Weekly (all models)"/>
+                <ComboBoxItem Content="Weekly (model-scoped, e.g. Fable)"/>
+            </ComboBox>
+        </DockPanel>
         <CheckBox x:Name="StartupBox" Content="Start with Windows" Margin="0,4"/>
         <CheckBox x:Name="UpdatesBox" Content="Check for updates daily" Margin="0,4"/>
 

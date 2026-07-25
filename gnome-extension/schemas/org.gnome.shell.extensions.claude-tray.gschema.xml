@@ -38,8 +38,18 @@
       <summary>Show the worst bucket's percentage next to the panel icon</summary>
     </key>
     <key name="monochrome-icon" type="b">
-      <default>false</default>
+      <default>true</default>
       <summary>Keep the panel icon white instead of tinting it green/orange/red</summary>
+    </key>
+    <key name="percent-bucket" type="s">
+      <default>'worst'</default>
+      <choices>
+        <choice value='worst'/>
+        <choice value='session'/>
+        <choice value='weekly_all'/>
+        <choice value='weekly_scoped'/>
+      </choices>
+      <summary>Which limit the panel percentage tracks (worst = whichever is highest)</summary>
     </key>
     <key name="credentials-path" type="s">
       <default>""</default>

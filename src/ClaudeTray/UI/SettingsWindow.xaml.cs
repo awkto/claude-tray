@@ -10,6 +10,9 @@ public partial class SettingsWindow : Window
     private readonly AuthService _auth;
     private readonly List<CheckBox> _bucketBoxes = new();
 
+    /// <summary>Parallel to the BucketCombo items in XAML.</summary>
+    private static readonly string[] BucketKeys = ["worst", "session", "weekly_all", "weekly_scoped"];
+
     public SettingsWindow(SettingsService settings, AuthService auth, UsagePoller poller)
     {
         InitializeComponent();
@@ -24,6 +27,8 @@ public partial class SettingsWindow : Window
         NotifyResetBox.IsChecked = s.NotifyOnReset;
         MuteAllBox.IsChecked = s.MuteAll;
         UpdatesBox.IsChecked = s.CheckForUpdates;
+        PercentBox.IsChecked = s.ShowPercentLabel;
+        BucketCombo.SelectedIndex = Math.Max(0, Array.IndexOf(BucketKeys, s.PercentBucket));
         StartupBox.IsChecked = StartupManager.IsEnabled();
         SignOutButton.IsEnabled = auth.IsSignedIn;
         VersionText.Text = $"claude-tray v{UpdateChecker.CurrentVersion}";
@@ -64,6 +69,8 @@ public partial class SettingsWindow : Window
         s.NotifyOnReset = NotifyResetBox.IsChecked == true;
         s.MuteAll = MuteAllBox.IsChecked == true;
         s.CheckForUpdates = UpdatesBox.IsChecked == true;
+        s.ShowPercentLabel = PercentBox.IsChecked == true;
+        s.PercentBucket = BucketKeys[Math.Clamp(BucketCombo.SelectedIndex, 0, BucketKeys.Length - 1)];
         s.MutedBuckets = _bucketBoxes.Where(b => b.IsChecked != true)
                                      .Select(b => (string)b.Tag)
                                      .ToHashSet();

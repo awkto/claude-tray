@@ -115,8 +115,13 @@ public partial class App : Application
         if (snapshot is null) return;
 
         var worst = snapshot.Worst;
+        // Severity always tracks the worst bucket, even when the number shows a specific
+        // one — otherwise picking "weekly" would hide a red session.
         var state = Severity.Classify(worst?.Percent, s);
-        _tray.Icon = TrayIconRenderer.Render(state);
+        int? percent = null;
+        if (s.ShowPercentLabel && snapshot.Pick(s.PercentBucket)?.Percent is { } p)
+            percent = (int)Math.Round(p);
+        _tray.Icon = TrayIconRenderer.Render(state, percent);
 
         var parts = snapshot.Limits
             .Where(l => l.Percent is not null)

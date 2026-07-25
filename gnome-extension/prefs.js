@@ -45,6 +45,24 @@ export default class ClaudeTrayPreferences extends ExtensionPreferences {
         general.add(interval);
 
         addSwitch(general, settings, 'show-percent-label', 'Show percentage in the top bar');
+
+        const buckets = ['worst', 'session', 'weekly_all', 'weekly_scoped'];
+        const bucketRow = new Adw.ComboRow({
+            title: 'Percentage shows',
+            subtitle: 'Which limit the top-bar number tracks',
+            model: Gtk.StringList.new([
+                'Worst (whichever is highest)',
+                'Session (5-hour)',
+                'Weekly (all models)',
+                'Weekly (model-scoped, e.g. Fable)',
+            ]),
+            selected: Math.max(0, buckets.indexOf(settings.get_string('percent-bucket'))),
+        });
+        bucketRow.connect('notify::selected', row => {
+            settings.set_string('percent-bucket', buckets[row.selected]);
+        });
+        general.add(bucketRow);
+
         addSwitch(general, settings, 'monochrome-icon', 'Keep the icon white (no colour changes)');
 
         const creds = new Adw.EntryRow({

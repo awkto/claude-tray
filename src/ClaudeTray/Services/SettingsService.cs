@@ -18,6 +18,10 @@ public sealed class AppSettings
     /// <summary>Bucket keys (LimitEntry.Key) the user muted individually.</summary>
     public HashSet<string> MutedBuckets { get; set; } = new();
     public bool CheckForUpdates { get; set; } = true;
+    /// <summary>Draw the percentage into the tray icon.</summary>
+    public bool ShowPercentLabel { get; set; } = true;
+    /// <summary>Which limit that percentage tracks: worst | session | weekly_all | weekly_scoped.</summary>
+    public string PercentBucket { get; set; } = "worst";
 
     [JsonIgnore]
     public TimeSpan PollInterval => TimeSpan.FromSeconds(Math.Clamp(PollIntervalSeconds, 10, 600));

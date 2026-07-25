@@ -79,4 +79,12 @@ public sealed class UsageSnapshot
 
     public LimitEntry? Worst =>
         Limits.Where(l => l.Percent is not null).MaxBy(l => l.Percent!.Value);
+
+    /// <summary>The bucket the tray percentage tracks. limits[] is dynamic — a chosen
+    /// bucket can be absent from a response — so anything unresolved falls back to Worst.</summary>
+    public LimitEntry? Pick(string bucket) =>
+        (bucket == "worst"
+            ? null
+            : Limits.FirstOrDefault(l => l.Kind == bucket && l.Percent is not null))
+        ?? Worst;
 }
