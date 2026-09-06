@@ -29,7 +29,8 @@ An optional, display-only `CodexUsagePoller` starts the installed `codex app-ser
 `account/rateLimits/read`. It reuses the Codex CLI's existing ChatGPT authentication and flattens
 each primary/secondary quota window into a flyout bar. It is intentionally disconnected from the
 tray icon, tooltip, and notification pipeline. On Windows it tries native Codex first, then Codex
-in the default WSL distro.
+in the default WSL distro. New installs enable the flyout section by default, and first-run presents
+it alongside Claude auth with an opt-out and instructions to use `codex login` when necessary.
 
 The GNOME extension uses the same app-server handshake through `Gio.Subprocess` when its opt-in
 Codex setting is enabled. It renders a separate popup section but leaves the panel icon and Claude

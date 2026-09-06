@@ -175,7 +175,7 @@ public partial class App : Application
             _signInWindow.Activate();
             return;
         }
-        _signInWindow = new SignInWindow(_auth);
+        _signInWindow = new SignInWindow(_auth, _settings);
         _signInWindow.Show();
     }
 

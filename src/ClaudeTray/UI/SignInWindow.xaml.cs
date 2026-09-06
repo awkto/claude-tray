@@ -6,12 +6,15 @@ namespace ClaudeTray.UI;
 public partial class SignInWindow : Window
 {
     private readonly AuthService _auth;
+    private readonly SettingsService _settings;
     private CancellationTokenSource? _signInCts;
 
-    public SignInWindow(AuthService auth)
+    public SignInWindow(AuthService auth, SettingsService settings)
     {
         InitializeComponent();
         _auth = auth;
+        _settings = settings;
+        CodexLimitsBox.IsChecked = settings.Current.ShowCodexLimits;
         Loaded += async (_, _) => await ScanCredentialsAsync();
         Closed += (_, _) => _signInCts?.Cancel();
     }
@@ -38,6 +41,7 @@ public partial class SignInWindow : Window
         try
         {
             await _auth.SignInWithBrowserAsync(_signInCts.Token);
+            SaveCodexPreference();
             Close();
         }
         catch (OperationCanceledException)
@@ -59,6 +63,7 @@ public partial class SignInWindow : Window
         try
         {
             _auth.ImportCredentialsFile((string)CredentialPaths.SelectedItem);
+            SaveCodexPreference();
             Close();
         }
         catch (Exception ex)
@@ -75,6 +80,13 @@ public partial class SignInWindow : Window
             return;
         }
         _auth.ImportPastedTokens(AccessTokenBox.Text, RefreshTokenBox.Text);
+        SaveCodexPreference();
         Close();
+    }
+
+    private void SaveCodexPreference()
+    {
+        _settings.Current.ShowCodexLimits = CodexLimitsBox.IsChecked == true;
+        _settings.Save();
     }
 }

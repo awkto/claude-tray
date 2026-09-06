@@ -93,9 +93,11 @@ Grab `claude-tray-setup-<version>.exe` from the [latest release](https://github.
 win-arm64) is published alongside. Binaries are not yet code-signed (tracked in issues), so
 SmartScreen may warn on first run.
 
-On first launch you'll get a connect window: **Sign in with Claude** (browser OAuth), or import
-existing Claude Code credentials — the app auto-scans `%USERPROFILE%\.claude` *and every WSL
-distro's* home directories.
+On first launch you'll get a connect window with both account sources. For Claude, choose browser
+OAuth or import existing Claude Code credentials — the app auto-scans `%USERPROFILE%\.claude` *and
+every WSL distro's* home directories. ChatGPT/Codex limits are enabled by default and reuse an
+existing Codex CLI sign-in on native Windows or in WSL; run `codex login` first if needed. The app
+does not copy or store the Codex token.
 
 ## Building from source
 
