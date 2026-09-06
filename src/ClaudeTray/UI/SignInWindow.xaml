@@ -1,14 +1,12 @@
 <Window x:Class="ClaudeTray.UI.SignInWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Connect claude-tray" SizeToContent="Height" Width="440"
+        Title="Connect claude-tray" SizeToContent="Height" Width="420"
         WindowStartupLocation="CenterScreen" ResizeMode="NoResize">
     <StackPanel Margin="20">
-        <TextBlock Text="Connect your accounts" FontSize="16" FontWeight="SemiBold"/>
-        <TextBlock Text="claude-tray reads usage limits — nothing else."
+        <TextBlock Text="Connect your Claude account" FontSize="16" FontWeight="SemiBold"/>
+        <TextBlock Text="claude-tray reads your usage limits — nothing else."
                    Foreground="Gray" Margin="0,4,0,14" TextWrapping="Wrap"/>
-
-        <TextBlock Text="Claude" FontSize="13" FontWeight="SemiBold" Margin="0,0,0,6"/>
 
         <Button x:Name="BrowserButton" Click="Browser_Click" Padding="12,8" FontWeight="SemiBold"
                 HorizontalContentAlignment="Center">
@@ -35,13 +33,6 @@
                         HorizontalAlignment="Left"/>
             </StackPanel>
         </Expander>
-
-        <Separator Margin="0,16"/>
-        <TextBlock Text="ChatGPT / Codex (optional)" FontSize="13" FontWeight="SemiBold"/>
-        <CheckBox x:Name="CodexLimitsBox" Content="Show my Codex limits in the flyout"
-                  Margin="0,8,0,4"/>
-        <TextBlock Foreground="Gray" FontSize="11" TextWrapping="Wrap"
-                   Text="Uses your existing Codex CLI ChatGPT sign-in on Windows or in WSL. There is no key to import here; sign in with 'codex login' first if needed."/>
 
         <TextBlock x:Name="StatusText" Foreground="#C0392B" TextWrapping="Wrap" Margin="0,12,0,0"/>
     </StackPanel>

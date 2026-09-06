@@ -24,8 +24,3 @@ Open settings with:
 
 APT upgrades replace the system extension files in place. Restart the GNOME
 session after an upgrade if the running shell has not picked up the new code.
-
-ChatGPT/Codex limits require a Codex CLI installation signed in with ChatGPT.
-The extension searches PATH, ~/.local/bin/codex, ~/.npm-global/bin/codex,
-/usr/local/bin/codex, and /usr/bin/codex. A custom path can be set in the
-extension preferences.

@@ -15,8 +15,6 @@ proper desktop tray app instead of a ported dedicated-hardware dashboard.
 - **Compact flyout** — click the tray icon and a small popup appears right next to the tray with
   **vertical bars**, one per limit bucket (5-hour session, 7-day all models, 7-day **Fable**, and any
   future scoped limits Anthropic adds), each with a percentage and reset countdown.
-- **Optional ChatGPT/Codex limits** — the Windows flyout can also show the rate-limit windows from
-  your existing Codex CLI ChatGPT sign-in. These are display-only and never change the Claude tray icon.
 - **Streamlined auth** — sign in with your Claude account directly (OAuth), or auto-import existing
   Claude Code credentials, including from **WSL** (`\\wsl$\...\.claude\.credentials.json`). No manual
   JSON-file hunting.
@@ -58,8 +56,7 @@ See [docs/DESIGN.md](docs/DESIGN.md) for the full design.
 The Ubuntu version is a GNOME Shell extension: a color-coded Clawd indicator in the top bar
 with a popup showing the vertical usage bars, and desktop notifications at your alert threshold.
 It reads (and refreshes) your Claude Code credentials from `~/.claude/.credentials.json` — just
-be signed in with `claude login`. Optionally, the popup also reads ChatGPT/Codex rate limits from
-an installed Codex CLI signed in with ChatGPT; those limits never affect the top-bar icon or notifications.
+be signed in with `claude login`.
 
 Install from the awkto APT repository (system-wide extension, recommended):
 
@@ -93,11 +90,9 @@ Grab `claude-tray-setup-<version>.exe` from the [latest release](https://github.
 win-arm64) is published alongside. Binaries are not yet code-signed (tracked in issues), so
 SmartScreen may warn on first run.
 
-On first launch you'll get a connect window with both account sources. For Claude, choose browser
-OAuth or import existing Claude Code credentials — the app auto-scans `%USERPROFILE%\.claude` *and
-every WSL distro's* home directories. ChatGPT/Codex limits are enabled by default and reuse an
-existing Codex CLI sign-in on native Windows or in WSL; run `codex login` first if needed. The app
-does not copy or store the Codex token.
+On first launch you'll get a connect window: **Sign in with Claude** (browser OAuth), or import
+existing Claude Code credentials — the app auto-scans `%USERPROFILE%\.claude` *and every WSL
+distro's* home directories.
 
 ## Building from source
 

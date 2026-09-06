@@ -28,7 +28,6 @@ public partial class SettingsWindow : Window
         MuteAllBox.IsChecked = s.MuteAll;
         UpdatesBox.IsChecked = s.CheckForUpdates;
         PercentBox.IsChecked = s.ShowPercentLabel;
-        CodexLimitsBox.IsChecked = s.ShowCodexLimits;
         BucketCombo.SelectedIndex = Math.Max(0, Array.IndexOf(BucketKeys, s.PercentBucket));
         StartupBox.IsChecked = StartupManager.IsEnabled();
         SignOutButton.IsEnabled = auth.IsSignedIn;
@@ -71,7 +70,6 @@ public partial class SettingsWindow : Window
         s.MuteAll = MuteAllBox.IsChecked == true;
         s.CheckForUpdates = UpdatesBox.IsChecked == true;
         s.ShowPercentLabel = PercentBox.IsChecked == true;
-        s.ShowCodexLimits = CodexLimitsBox.IsChecked == true;
         s.PercentBucket = BucketKeys[Math.Clamp(BucketCombo.SelectedIndex, 0, BucketKeys.Length - 1)];
         s.MutedBuckets = _bucketBoxes.Where(b => b.IsChecked != true)
                                      .Select(b => (string)b.Tag)

@@ -45,8 +45,8 @@ function limitShortLabel(limit) {
     return limit.kind.replace(/_/g, ' ');
 }
 
-function formatReset(value) {
-    const reset = new Date(typeof value === 'number' ? value * 1000 : value);
+function formatReset(iso) {
+    const reset = new Date(iso);
     if (Number.isNaN(reset.getTime())) return '';
     const now = new Date();
     const hm = `${String(reset.getHours()).padStart(2, '0')}:${String(reset.getMinutes()).padStart(2, '0')}`;
@@ -54,19 +54,6 @@ function formatReset(value) {
     const tomorrow = new Date(now.getTime() + 86400_000);
     if (reset.toDateString() === tomorrow.toDateString()) return `tmrw ${hm}`;
     return `${reset.toLocaleDateString(undefined, {weekday: 'short'})} ${hm}`;
-}
-
-function formatCodexDuration(minutes) {
-    if (!minutes || minutes <= 0) return 'Limit';
-    if (minutes === 10080) return 'Week';
-    if (minutes >= 1440 && minutes % 1440 === 0) return `${minutes / 1440} days`;
-    if (minutes >= 60 && minutes % 60 === 0) return `${minutes / 60} hours`;
-    return `${minutes} min`;
-}
-
-function humanize(value) {
-    const words = (value || 'Codex').replace(/[_-]/g, ' ');
-    return words.charAt(0).toUpperCase() + words.slice(1);
 }
 
 const UsageIndicator = GObject.registerClass(
@@ -80,11 +67,6 @@ class UsageIndicator extends PanelMenu.Button {
         this._notifyState = new Map();
         this._snapshot = null;
         this._status = 'Waiting for first poll…';
-        this._codexSnapshot = null;
-        this._codexStatus = null;
-        this._codexPolling = false;
-        this._codexCancellable = null;
-        this._destroyed = false;
         this._timeoutId = 0;
         this._lastAttemptAt = 0;
         this._backoffUntil = 0;
@@ -111,18 +93,6 @@ class UsageIndicator extends PanelMenu.Button {
             if (key === 'poll-interval-seconds') this._reschedule();
             if (key === 'show-percent-label' || key === 'monochrome-icon' || key === 'percent-bucket')
                 this._updatePanel();
-            if (key === 'show-codex-limits') {
-                if (!this._settings.get_boolean(key)) {
-                    this._codexCancellable?.cancel();
-                    this._codexSnapshot = null;
-                    this._codexStatus = null;
-                    this._updateMenu();
-                } else {
-                    this._pollCodex().then(() => this._updateMenu());
-                }
-            }
-            if (key === 'codex-command' && this._settings.get_boolean('show-codex-limits'))
-                this._pollCodex().then(() => this._updateMenu());
         });
         this.menu.connect('open-state-changed', (_menu, open) => {
             if (open) this._poll({opportunistic: true});
@@ -133,10 +103,6 @@ class UsageIndicator extends PanelMenu.Button {
     }
 
     _buildMenu() {
-        this._claudeTitleItem = new PopupMenu.PopupBaseMenuItem({reactive: false, can_focus: false});
-        this._claudeTitleItem.add_child(new St.Label({text: 'Claude', style_class: 'ct-section-title'}));
-        this.menu.addMenuItem(this._claudeTitleItem);
-
         this._barsItem = new PopupMenu.PopupBaseMenuItem({reactive: false, can_focus: false});
         this._barsBox = new St.BoxLayout({style_class: 'ct-bars', x_expand: true});
         this._barsItem.add_child(this._barsBox);
@@ -148,31 +114,7 @@ class UsageIndicator extends PanelMenu.Button {
         this._statusItem.add_child(this._statusLabel);
         this.menu.addMenuItem(this._statusItem);
 
-        this._codexSeparator = new PopupMenu.PopupSeparatorMenuItem();
-        this.menu.addMenuItem(this._codexSeparator);
-
-        this._codexTitleItem = new PopupMenu.PopupBaseMenuItem({reactive: false, can_focus: false});
-        const codexTitleBox = new St.BoxLayout({x_expand: true});
-        codexTitleBox.add_child(new St.Label({text: 'ChatGPT · Codex', style_class: 'ct-section-title'}));
-        this._codexPlanLabel = new St.Label({text: '', style_class: 'ct-section-plan', x_expand: true,
-            x_align: Clutter.ActorAlign.END});
-        codexTitleBox.add_child(this._codexPlanLabel);
-        this._codexTitleItem.add_child(codexTitleBox);
-        this.menu.addMenuItem(this._codexTitleItem);
-
-        this._codexBarsItem = new PopupMenu.PopupBaseMenuItem({reactive: false, can_focus: false});
-        this._codexBarsBox = new St.BoxLayout({style_class: 'ct-bars', x_expand: true});
-        this._codexBarsItem.add_child(this._codexBarsBox);
-        this.menu.addMenuItem(this._codexBarsItem);
-
-        this._codexStatusItem = new PopupMenu.PopupBaseMenuItem({reactive: false, can_focus: false});
-        this._codexStatusLabel = new St.Label({text: '', style_class: 'ct-status'});
-        this._codexStatusLabel.clutter_text.line_wrap = true;
-        this._codexStatusItem.add_child(this._codexStatusLabel);
-        this.menu.addMenuItem(this._codexStatusItem);
-
-        this._actionsSeparator = new PopupMenu.PopupSeparatorMenuItem();
-        this.menu.addMenuItem(this._actionsSeparator);
+        this.menu.addMenuItem(new PopupMenu.PopupSeparatorMenuItem());
 
         const refreshItem = new PopupMenu.PopupMenuItem('Refresh now');
         refreshItem.connect('activate', () => this._poll());
@@ -271,202 +213,63 @@ class UsageIndicator extends PanelMenu.Button {
         });
     }
 
-    // Codex app-server owns ChatGPT authentication and token refresh. The extension
-    // exchanges only local JSONL messages and never reads OpenAI credentials itself.
-    _codexExecutable() {
-        const custom = this._settings.get_string('codex-command').trim();
-        if (custom) {
-            const resolved = custom.includes('/') ? custom : GLib.find_program_in_path(custom);
-            if (resolved && GLib.file_test(resolved, GLib.FileTest.IS_EXECUTABLE)) return resolved;
-            throw new Error(`Codex executable is not usable: ${custom}`);
-        }
-
-        const candidates = [
-            GLib.find_program_in_path('codex'),
-            GLib.build_filenamev([GLib.get_home_dir(), '.local', 'bin', 'codex']),
-            GLib.build_filenamev([GLib.get_home_dir(), '.npm-global', 'bin', 'codex']),
-            '/usr/local/bin/codex',
-            '/usr/bin/codex',
-        ];
-        const found = candidates.find(path => path && GLib.file_test(path, GLib.FileTest.IS_EXECUTABLE));
-        if (!found)
-            throw new Error('Codex CLI not found. Install Codex, sign in with ChatGPT, or set its path in Settings.');
-        return found;
-    }
-
-    _sendCodex(stream, message, cancellable) {
-        stream.put_string(`${JSON.stringify(message)}\n`, cancellable);
-        stream.flush(cancellable);
-    }
-
-    _readCodexResult(stream, id, cancellable) {
-        return new Promise((resolve, reject) => {
-            const readNext = () => {
-                stream.read_line_async(GLib.PRIORITY_DEFAULT, cancellable, (input, result) => {
-                    try {
-                        const [line] = input.read_line_finish_utf8(result);
-                        if (line === null) {
-                            reject(new Error('Codex app-server closed before returning account limits.'));
-                            return;
-                        }
-                        const message = JSON.parse(line);
-                        if (message.id !== id) {
-                            readNext();
-                            return;
-                        }
-                        if (message.error) {
-                            reject(new Error(message.error.message ?? JSON.stringify(message.error)));
-                            return;
-                        }
-                        if (message.result === undefined) {
-                            reject(new Error('Codex response did not contain a result.'));
-                            return;
-                        }
-                        resolve(message.result);
-                    } catch (e) {
-                        reject(e);
-                    }
-                });
-            };
-            readNext();
-        });
-    }
-
-    _parseCodexLimits(result) {
-        let buckets = Object.values(result.rateLimitsByLimitId ?? {});
-        if (!buckets.length && result.rateLimits) buckets = [result.rateLimits];
-        const multiple = buckets.length > 1;
-        const limits = [];
-
-        for (const bucket of buckets) {
-            for (const [windowName, window] of [['primary', bucket.primary], ['secondary', bucket.secondary]]) {
-                if (!window || (window.usedPercent == null && window.resetsAt == null)) continue;
-                const duration = formatCodexDuration(window.windowDurationMins);
-                const bucketLabel = bucket.limitName || humanize(bucket.limitId);
-                const showBucket = multiple || (bucket.limitId ?? 'codex').toLowerCase() !== 'codex';
-                limits.push({
-                    key: `${bucket.limitId ?? 'codex'}:${windowName}`,
-                    label: showBucket ? `${bucketLabel} · ${duration}` : duration,
-                    percent: window.usedPercent ?? 0,
-                    resetsAt: window.resetsAt,
-                });
-            }
-        }
-
-        return {
-            limits,
-            planType: buckets.find(bucket => bucket.planType)?.planType ?? null,
-            fetchedAt: new Date(),
-        };
-    }
-
-    async _pollCodex() {
-        if (this._destroyed || !this._settings.get_boolean('show-codex-limits') || this._codexPolling) return;
-        this._codexPolling = true;
-        if (!this._codexSnapshot) this._codexStatus = 'Reading limits from Codex…';
-        this._updateMenu();
-
-        const cancellable = new Gio.Cancellable();
-        this._codexCancellable = cancellable;
-        let process = null;
-        let timeoutId = GLib.timeout_add_seconds(GLib.PRIORITY_DEFAULT, 15, () => {
-            timeoutId = 0;
-            cancellable.cancel();
-            return GLib.SOURCE_REMOVE;
-        });
-
-        try {
-            process = Gio.Subprocess.new(
-                [this._codexExecutable(), 'app-server'],
-                Gio.SubprocessFlags.STDIN_PIPE | Gio.SubprocessFlags.STDOUT_PIPE |
-                Gio.SubprocessFlags.STDERR_SILENCE);
-            const output = new Gio.DataOutputStream({base_stream: process.get_stdin_pipe()});
-            const input = new Gio.DataInputStream({base_stream: process.get_stdout_pipe()});
-
-            this._sendCodex(output, {
-                method: 'initialize',
-                id: 0,
-                params: {clientInfo: {name: 'claude_tray', title: 'claude-tray', version: 'gnome'}},
-            }, cancellable);
-            await this._readCodexResult(input, 0, cancellable);
-            this._sendCodex(output, {method: 'initialized', params: {}}, cancellable);
-            this._sendCodex(output, {method: 'account/rateLimits/read', id: 1}, cancellable);
-            const result = await this._readCodexResult(input, 1, cancellable);
-
-            this._codexSnapshot = this._parseCodexLimits(result);
-            this._codexStatus = this._codexSnapshot.limits.length
-                ? null
-                : 'No Codex limit windows were returned for this account.';
-        } catch (e) {
-            if (this._destroyed || this._cancellable.is_cancelled()) return;
-            const message = cancellable.is_cancelled()
-                ? 'Codex did not return account limits within 15 seconds.'
-                : e.message;
-            this._codexStatus = this._codexSnapshot
-                ? `Stale — last updated ${this._codexSnapshot.fetchedAt.toLocaleTimeString()}`
-                : message;
-        } finally {
-            if (timeoutId) GLib.source_remove(timeoutId);
-            try { process?.force_exit(); } catch (_e) { /* already exited */ }
-            if (this._codexCancellable === cancellable) this._codexCancellable = null;
-            this._codexPolling = false;
-        }
-    }
-
     async _poll({opportunistic = false} = {}) {
-        if (this._destroyed || this._polling) return;
+        if (this._polling) return;
         const now = Date.now();
+        // A 429 costs us the next window too, so honour the backoff for every
+        // caller — timer, popup and the manual Refresh item alike.
+        if (now < this._backoffUntil) {
+            this._updateMenu();
+            return;
+        }
         if (opportunistic && now - this._lastAttemptAt < MENU_POLL_MIN_GAP_MS) {
             this._updateMenu();
             return;
         }
         this._polling = true;
         this._lastAttemptAt = now;
-        if (now >= this._backoffUntil) {
-            try {
-                const token = await this._getAccessToken();
-                const {status, retryAfterS, text} = await this._request('GET', USAGE_URL, token);
-                if (status === 401)
-                    throw new AuthError('Usage request unauthorized. Run `claude login`.');
-                if (status === 429)
-                    throw new RateLimitError(retryAfterS);
-                if (status !== 200)
-                    throw new Error(`Usage endpoint returned ${status}`);
+        try {
+            const token = await this._getAccessToken();
+            const {status, retryAfterS, text} = await this._request('GET', USAGE_URL, token);
+            if (status === 401)
+                throw new AuthError('Usage request unauthorized. Run `claude login`.');
+            if (status === 429)
+                throw new RateLimitError(retryAfterS);
+            if (status !== 200)
+                throw new Error(`Usage endpoint returned ${status}`);
 
-                const parsed = JSON.parse(text);
-                this._snapshot = {
-                    limits: (parsed.limits ?? []).filter(l => l.percent !== null && l.percent !== undefined),
-                    extraUsage: parsed.extra_usage,
-                    fetchedAt: new Date(),
-                };
-                this._status = null;
-                this._backoffLevel = 0;
-                this._backoffUntil = 0;
-                this._processNotifications(this._snapshot);
-            } catch (e) {
-                if (e instanceof AuthError) {
-                    this._snapshot = null;
-                    this._status = e.message;
-                } else if (e instanceof RateLimitError) {
-                    // Keep the stale snapshot — the bars are still roughly right.
-                    this._backoffLevel = Math.min(this._backoffLevel + 1, 6);
-                    const delayS = Math.min(
-                        Math.max(e.retryAfterS, BACKOFF_BASE_S * 2 ** (this._backoffLevel - 1)),
-                        BACKOFF_MAX_S);
-                    this._backoffUntil = Date.now() + delayS * 1000;
-                    const at = new Date(this._backoffUntil);
-                    this._status = `Rate limited — retrying at ${String(at.getHours()).padStart(2, '0')}:${String(at.getMinutes()).padStart(2, '0')}`;
-                } else {
-                    // Keep the stale snapshot; just surface the problem.
-                    this._status = this._snapshot
-                        ? `Stale — last updated ${this._snapshot.fetchedAt.toLocaleTimeString()}`
-                        : `Can't reach Anthropic: ${e.message}`;
-                }
+            const parsed = JSON.parse(text);
+            this._snapshot = {
+                limits: (parsed.limits ?? []).filter(l => l.percent !== null && l.percent !== undefined),
+                extraUsage: parsed.extra_usage,
+                fetchedAt: new Date(),
+            };
+            this._status = null;
+            this._backoffLevel = 0;
+            this._backoffUntil = 0;
+            this._processNotifications(this._snapshot);
+        } catch (e) {
+            if (e instanceof AuthError) {
+                this._snapshot = null;
+                this._status = e.message;
+            } else if (e instanceof RateLimitError) {
+                // Keep the stale snapshot — the bars are still roughly right.
+                this._backoffLevel = Math.min(this._backoffLevel + 1, 6);
+                const delayS = Math.min(
+                    Math.max(e.retryAfterS, BACKOFF_BASE_S * 2 ** (this._backoffLevel - 1)),
+                    BACKOFF_MAX_S);
+                this._backoffUntil = Date.now() + delayS * 1000;
+                const at = new Date(this._backoffUntil);
+                this._status = `Rate limited — retrying at ${String(at.getHours()).padStart(2, '0')}:${String(at.getMinutes()).padStart(2, '0')}`;
+            } else {
+                // Keep the stale snapshot; just surface the problem.
+                this._status = this._snapshot
+                    ? `Stale — last updated ${this._snapshot.fetchedAt.toLocaleTimeString()}`
+                    : `Can't reach Anthropic: ${e.message}`;
             }
+        } finally {
+            this._polling = false;
         }
-        await this._pollCodex();
-        this._polling = false;
-        if (this._destroyed) return;
         this._updatePanel();
         this._updateMenu();
     }
@@ -521,39 +324,7 @@ class UsageIndicator extends PanelMenu.Button {
     _updateMenu() {
         this._barsBox.destroy_all_children();
         const limits = this._snapshot?.limits ?? [];
-        this._renderBars(this._barsBox, limits.map(limit => ({
-            label: limitShortLabel(limit),
-            percent: limit.percent,
-            resetsAt: limit.resets_at,
-        })));
-        this._barsItem.visible = limits.length > 0;
 
-        const showCodex = this._settings.get_boolean('show-codex-limits');
-        this._claudeTitleItem.visible = showCodex;
-        this._codexSeparator.visible = showCodex;
-        this._codexTitleItem.visible = showCodex;
-        this._codexBarsBox.destroy_all_children();
-        const codexLimits = this._codexSnapshot?.limits ?? [];
-        this._renderBars(this._codexBarsBox, codexLimits);
-        this._codexBarsItem.visible = showCodex && codexLimits.length > 0;
-        this._codexPlanLabel.text = this._codexSnapshot?.planType
-            ? humanize(this._codexSnapshot.planType)
-            : '';
-        this._codexStatusLabel.text = this._codexStatus ?? '';
-        this._codexStatusItem.visible = showCodex && this._codexStatusLabel.text !== '';
-
-        let statusText = this._status ?? '';
-        const extra = this._snapshot?.extraUsage;
-        if (extra?.is_enabled && extra.monthly_limit != null) {
-            const div = 10 ** (extra.decimal_places ?? 2);
-            const line = `Extra usage: ${(extra.used_credits ?? 0) / div} / ${extra.monthly_limit / div} ${extra.currency ?? ''}`;
-            statusText = statusText ? `${line}\n${statusText}` : line;
-        }
-        this._statusLabel.text = statusText;
-        this._statusItem.visible = statusText !== '';
-    }
-
-    _renderBars(box, limits) {
         for (const limit of limits) {
             const state = this._classify(limit.percent);
             const column = new St.BoxLayout({vertical: true, style_class: 'ct-bar-column'});
@@ -571,12 +342,23 @@ class UsageIndicator extends PanelMenu.Button {
                 text: `${Math.round(limit.percent)}%`,
                 style_class: `ct-bar-percent ct-text-${state === 'warn' ? 'ok' : state}`,
             }));
-            column.add_child(new St.Label({text: limit.label, style_class: 'ct-bar-name'}));
-            if (limit.resetsAt)
-                column.add_child(new St.Label({text: `↺ ${formatReset(limit.resetsAt)}`, style_class: 'ct-bar-reset'}));
+            column.add_child(new St.Label({text: limitShortLabel(limit), style_class: 'ct-bar-name'}));
+            if (limit.resets_at)
+                column.add_child(new St.Label({text: `↺ ${formatReset(limit.resets_at)}`, style_class: 'ct-bar-reset'}));
 
-            box.add_child(column);
+            this._barsBox.add_child(column);
         }
+        this._barsItem.visible = limits.length > 0;
+
+        let statusText = this._status ?? '';
+        const extra = this._snapshot?.extraUsage;
+        if (extra?.is_enabled && extra.monthly_limit != null) {
+            const div = 10 ** (extra.decimal_places ?? 2);
+            const line = `Extra usage: ${(extra.used_credits ?? 0) / div} / ${extra.monthly_limit / div} ${extra.currency ?? ''}`;
+            statusText = statusText ? `${line}\n${statusText}` : line;
+        }
+        this._statusLabel.text = statusText;
+        this._statusItem.visible = statusText !== '';
     }
 
     // ---- notifications -----------------------------------------------------
@@ -618,7 +400,6 @@ class UsageIndicator extends PanelMenu.Button {
     }
 
     destroy() {
-        this._destroyed = true;
         if (this._timeoutId) {
             GLib.source_remove(this._timeoutId);
             this._timeoutId = 0;
@@ -628,7 +409,6 @@ class UsageIndicator extends PanelMenu.Button {
             this._settingsChangedId = 0;
         }
         this._cancellable.cancel();
-        this._codexCancellable?.cancel();
         this._session.abort();
         super.destroy();
     }

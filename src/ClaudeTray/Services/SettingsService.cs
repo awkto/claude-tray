@@ -22,8 +22,6 @@ public sealed class AppSettings
     public bool ShowPercentLabel { get; set; } = true;
     /// <summary>Which limit that percentage tracks: worst | session | weekly_all | weekly_scoped.</summary>
     public string PercentBucket { get; set; } = "worst";
-    /// <summary>Show ChatGPT/Codex account limits in the flyout. Never affects the tray icon.</summary>
-    public bool ShowCodexLimits { get; set; } = true;
 
     [JsonIgnore]
     public TimeSpan PollInterval => TimeSpan.FromSeconds(Math.Clamp(PollIntervalSeconds, 10, 600));

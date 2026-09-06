@@ -21,18 +21,16 @@ public partial class FlyoutWindow : Window
     private const double BarMaxHeight = 92;
 
     private readonly UsagePoller _poller;
-    private readonly CodexUsagePoller _codexPoller;
     private readonly SettingsService _settings;
     private readonly UpdateChecker _updates;
 
     public event Action? SettingsRequested;
     public event Action? SignInRequested;
 
-    public FlyoutWindow(UsagePoller poller, CodexUsagePoller codexPoller, SettingsService settings, UpdateChecker updates)
+    public FlyoutWindow(UsagePoller poller, SettingsService settings, UpdateChecker updates)
     {
         InitializeComponent();
         _poller = poller;
-        _codexPoller = codexPoller;
         _settings = settings;
         _updates = updates;
         Deactivated += (_, _) => Hide();
@@ -51,10 +49,6 @@ public partial class FlyoutWindow : Window
     {
         var s = _settings.Current;
         var snapshot = _poller.Latest;
-
-        Title = s.ShowCodexLimits ? "Account usage" : "Claude usage";
-        TitleText.Text = Title;
-        ClaudeSectionTitle.Visibility = s.ShowCodexLimits ? Visibility.Visible : Visibility.Collapsed;
 
         SignInButton.Visibility = Visibility.Collapsed;
         StatusText.Visibility = Visibility.Collapsed;
@@ -113,63 +107,11 @@ public partial class FlyoutWindow : Window
         }
         Bars.ItemsSource = items;
 
-        RefreshCodexContent(s);
-
         if (_updates.AvailableVersion is string v)
         {
             UpdateText.Text = $"Update available: v{v}";
             UpdateText.Visibility = Visibility.Visible;
         }
-    }
-
-    private void RefreshCodexContent(AppSettings settings)
-    {
-        CodexSection.Visibility = settings.ShowCodexLimits ? Visibility.Visible : Visibility.Collapsed;
-        if (!settings.ShowCodexLimits) return;
-
-        CodexStatusText.Visibility = Visibility.Collapsed;
-        CodexPlanText.Text = "";
-        var snapshot = _codexPoller.Latest;
-        if (snapshot?.PlanType is { Length: > 0 } plan)
-            CodexPlanText.Text = char.ToUpperInvariant(plan[0]) + plan[1..];
-
-        switch (_codexPoller.State)
-        {
-            case CodexPollerState.Waiting when snapshot is null:
-                CodexStatusText.Text = "Reading limits from Codex…";
-                CodexStatusText.Visibility = Visibility.Visible;
-                break;
-            case CodexPollerState.Error when snapshot is null:
-                CodexStatusText.Text = _codexPoller.LastError ?? "Codex limits unavailable.";
-                CodexStatusText.Visibility = Visibility.Visible;
-                break;
-            case CodexPollerState.Error:
-                CodexStatusText.Text = $"Stale — last updated {snapshot.FetchedAt.ToLocalTime():HH:mm}";
-                CodexStatusText.Visibility = Visibility.Visible;
-                break;
-        }
-
-        if (_codexPoller.State == CodexPollerState.Ok && snapshot?.Limits.Count == 0)
-        {
-            CodexStatusText.Text = "No Codex limit windows were returned for this account.";
-            CodexStatusText.Visibility = Visibility.Visible;
-        }
-
-        CodexBars.ItemsSource = snapshot?.Limits.Select(limit =>
-        {
-            var state = Severity.Classify(limit.Percent, settings);
-            var pct = limit.Percent ?? 0;
-            return new BarItem
-            {
-                Label = limit.Label,
-                PercentText = limit.Percent is null ? "–" : $"{pct:0}%",
-                BarHeight = Math.Clamp(pct / 100.0, 0.03, 1.0) * BarMaxHeight,
-                BarBrush = new SolidColorBrush(Severity.WpfColor(state)),
-                ResetText = limit.ResetsAt is { } reset ? $"↺ {NotificationService.FormatReset(reset)}" : "",
-                Tooltip = $"Codex {limit.Label}: {pct:0}%" +
-                          (limit.ResetsAt is { } reset2 ? $" — resets {NotificationService.FormatReset(reset2)}" : ""),
-            };
-        }).ToList() ?? [];
     }
 
     [DllImport("user32.dll")]
@@ -194,8 +136,7 @@ public partial class FlyoutWindow : Window
             : Math.Min(wa.Bottom - ActualHeight, wa.Top);
     }
 
-    private async void Refresh_Click(object sender, RoutedEventArgs e) =>
-        await Task.WhenAll(_poller.PollNowAsync(), _codexPoller.PollNowAsync());
+    private async void Refresh_Click(object sender, RoutedEventArgs e) => await _poller.PollNowAsync();
 
     private void Settings_Click(object sender, RoutedEventArgs e)
     {

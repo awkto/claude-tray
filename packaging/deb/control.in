@@ -6,7 +6,6 @@ Architecture: all
 Maintainer: awkto <awkto@outlook.com>
 Depends: gnome-shell (>= 45), gir1.2-soup-3.0
 Homepage: https://github.com/awkto/claude-tray
-Description: Claude and optional Codex usage monitor for GNOME Shell
+Description: Claude usage monitor for GNOME Shell
  A GNOME Shell top-bar extension that displays Claude account usage limits,
- optional ChatGPT/Codex rate-limit windows, reset times, and Claude threshold
- notifications.
+ reset times, and threshold notifications.
