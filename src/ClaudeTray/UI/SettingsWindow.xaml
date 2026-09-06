@@ -32,6 +32,8 @@
         </DockPanel>
 
         <TextBlock Text="General" FontWeight="SemiBold" Margin="0,12,0,6"/>
+        <CheckBox x:Name="CodexLimitsBox" Content="Show ChatGPT/Codex limits in the flyout" Margin="0,4"
+                  ToolTip="Uses your existing Codex CLI sign-in; does not affect the tray icon"/>
         <CheckBox x:Name="PercentBox" Content="Show the percentage on the tray icon" Margin="0,4"/>
         <DockPanel Margin="0,2">
             <TextBlock Text="Percentage shows" Width="160" VerticalAlignment="Center"/>

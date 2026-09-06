@@ -25,6 +25,12 @@ claude-tray.exe (.NET 8, WPF, single process)
 └── UpdateChecker        – GitHub Releases API, daily
 ```
 
+An optional, display-only `CodexUsagePoller` starts the installed `codex app-server` and calls
+`account/rateLimits/read`. It reuses the Codex CLI's existing ChatGPT authentication and flattens
+each primary/secondary quota window into a flyout bar. It is intentionally disconnected from the
+tray icon, tooltip, and notification pipeline. On Windows it tries native Codex first, then Codex
+in the default WSL distro.
+
 ### Data source
 
 `GET https://api.anthropic.com/api/oauth/usage`

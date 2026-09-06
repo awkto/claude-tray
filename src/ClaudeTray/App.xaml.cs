@@ -16,6 +16,7 @@ public partial class App : Application
     private SettingsService _settings = null!;
     private AuthService _auth = null!;
     private UsagePoller _poller = null!;
+    private CodexUsagePoller _codexPoller = null!;
     private NotificationService _notifications = null!;
     private UpdateChecker _updates = null!;
     private FlyoutWindow? _flyout;
@@ -38,13 +39,16 @@ public partial class App : Application
         _auth = new AuthService(_http);
         _auth.Initialize();
         _poller = new UsagePoller(new UsageClient(_http, _auth), _auth, _settings);
+        _codexPoller = new CodexUsagePoller(new CodexUsageClient(), _settings);
         _notifications = new NotificationService(_settings);
         _updates = new UpdateChecker(_http, _settings);
 
         CreateTrayIcon();
         _poller.Updated += OnPollerUpdated;
+        _codexPoller.Updated += OnCodexPollerUpdated;
         _updates.UpdateFound += () => Dispatcher.Invoke(UpdateTrayVisuals);
         _poller.Start();
+        _codexPoller.Start();
 
         if (!_auth.IsSignedIn)
             Dispatcher.InvokeAsync(ShowSignIn);
@@ -54,7 +58,7 @@ public partial class App : Application
     {
         var menu = new ContextMenu();
         menu.Items.Add(MakeItem("Open", (_, _) => ShowFlyout()));
-        menu.Items.Add(MakeItem("Refresh now", async (_, _) => await _poller.PollNowAsync()));
+        menu.Items.Add(MakeItem("Refresh now", async (_, _) => await RefreshAllAsync()));
         menu.Items.Add(MakeItem("Settings…", (_, _) => ShowSettings()));
         menu.Items.Add(new Separator());
         menu.Items.Add(MakeItem("Quit", (_, _) => Shutdown()));
@@ -90,6 +94,14 @@ public partial class App : Application
 
         _ = _updates.MaybeCheckAsync(CancellationToken.None);
     }
+
+    private void OnCodexPollerUpdated() => Dispatcher.Invoke(() =>
+    {
+        // Codex is intentionally flyout-only: do not call UpdateTrayVisuals here.
+        if (_flyout?.IsVisible == true) _flyout.RefreshContent();
+    });
+
+    private Task RefreshAllAsync() => Task.WhenAll(_poller.PollNowAsync(), _codexPoller.PollNowAsync());
 
     private void UpdateTrayVisuals()
     {
@@ -139,7 +151,7 @@ public partial class App : Application
 
     private FlyoutWindow CreateFlyout()
     {
-        var flyout = new FlyoutWindow(_poller, _settings, _updates);
+        var flyout = new FlyoutWindow(_poller, _codexPoller, _settings, _updates);
         flyout.SettingsRequested += ShowSettings;
         flyout.SignInRequested += ShowSignIn;
         return flyout;
@@ -170,6 +182,7 @@ public partial class App : Application
     protected override void OnExit(ExitEventArgs e)
     {
         _poller?.Dispose();
+        _codexPoller?.Dispose();
         _tray?.Dispose();
         _singleInstance?.Dispose();
         base.OnExit(e);

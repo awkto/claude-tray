@@ -5,6 +5,25 @@
         WindowStyle="None" ResizeMode="NoResize" AllowsTransparency="True"
         Background="Transparent" SizeToContent="WidthAndHeight"
         Topmost="True" ShowInTaskbar="False" ShowActivated="True">
+    <Window.Resources>
+        <DataTemplate x:Key="UsageBarTemplate">
+            <StackPanel Width="74" Margin="4,0">
+                <Grid Height="92" Width="26" HorizontalAlignment="Center">
+                    <Border Background="#33808080" CornerRadius="6"/>
+                    <Border Background="{Binding BarBrush}" CornerRadius="6"
+                            Height="{Binding BarHeight}" VerticalAlignment="Bottom"
+                            ToolTip="{Binding Tooltip}"/>
+                </Grid>
+                <TextBlock Text="{Binding PercentText}" FontSize="13" FontWeight="SemiBold"
+                           Foreground="{Binding BarBrush}" HorizontalAlignment="Center" Margin="0,6,0,0"/>
+                <TextBlock Text="{Binding Label}" FontSize="11" Foreground="#FFD1D5DB"
+                           HorizontalAlignment="Center" TextTrimming="CharacterEllipsis"
+                           ToolTip="{Binding Label}"/>
+                <TextBlock Text="{Binding ResetText}" FontSize="10" Foreground="#FF9CA3AF"
+                           HorizontalAlignment="Center"/>
+            </StackPanel>
+        </DataTemplate>
+    </Window.Resources>
     <Border x:Name="RootBorder" CornerRadius="10" Padding="16,12,16,12" Margin="12"
             Background="#F2202124" BorderBrush="#40FFFFFF" BorderThickness="1">
         <Border.Effect>
@@ -22,40 +41,44 @@
                 </StackPanel>
             </DockPanel>
 
+            <TextBlock x:Name="ClaudeSectionTitle" Text="Claude" FontSize="11" FontWeight="SemiBold"
+                       Foreground="#FFD1D5DB" Margin="0,0,0,6" Visibility="Collapsed"/>
+
             <TextBlock x:Name="StatusText" Foreground="#FF9CA3AF" FontSize="11" TextWrapping="Wrap"
                        MaxWidth="260" Margin="0,0,0,8" Visibility="Collapsed"/>
             <Button x:Name="SignInButton" Content="Sign in with Claude" Click="SignIn_Click"
                     Visibility="Collapsed" Margin="0,2,0,8" Padding="10,6"
                     HorizontalAlignment="Center"/>
 
-            <ItemsControl x:Name="Bars">
+            <ItemsControl x:Name="Bars" ItemTemplate="{StaticResource UsageBarTemplate}">
                 <ItemsControl.ItemsPanel>
                     <ItemsPanelTemplate>
                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Center"/>
                     </ItemsPanelTemplate>
                 </ItemsControl.ItemsPanel>
-                <ItemsControl.ItemTemplate>
-                    <DataTemplate>
-                        <StackPanel Width="66" Margin="4,0">
-                            <Grid Height="92" Width="26" HorizontalAlignment="Center">
-                                <Border Background="#33808080" CornerRadius="6"/>
-                                <Border Background="{Binding BarBrush}" CornerRadius="6"
-                                        Height="{Binding BarHeight}" VerticalAlignment="Bottom"
-                                        ToolTip="{Binding Tooltip}"/>
-                            </Grid>
-                            <TextBlock Text="{Binding PercentText}" FontSize="13" FontWeight="SemiBold"
-                                       Foreground="{Binding BarBrush}" HorizontalAlignment="Center" Margin="0,6,0,0"/>
-                            <TextBlock Text="{Binding Label}" FontSize="11" Foreground="#FFD1D5DB"
-                                       HorizontalAlignment="Center" TextTrimming="CharacterEllipsis"/>
-                            <TextBlock Text="{Binding ResetText}" FontSize="10" Foreground="#FF9CA3AF"
-                                       HorizontalAlignment="Center"/>
-                        </StackPanel>
-                    </DataTemplate>
-                </ItemsControl.ItemTemplate>
             </ItemsControl>
 
             <TextBlock x:Name="FooterText" Foreground="#FF9CA3AF" FontSize="10.5"
                        HorizontalAlignment="Center" Margin="0,10,0,0" Visibility="Collapsed"/>
+
+            <StackPanel x:Name="CodexSection" Visibility="Collapsed">
+                <Separator Margin="0,12,0,10" Background="#40FFFFFF"/>
+                <DockPanel Margin="0,0,0,6">
+                    <TextBlock Text="ChatGPT · Codex" FontSize="11" FontWeight="SemiBold"
+                               Foreground="#FFD1D5DB"/>
+                    <TextBlock x:Name="CodexPlanText" DockPanel.Dock="Right" FontSize="10"
+                               Foreground="#FF9CA3AF" HorizontalAlignment="Right"/>
+                </DockPanel>
+                <TextBlock x:Name="CodexStatusText" Foreground="#FF9CA3AF" FontSize="11"
+                           TextWrapping="Wrap" MaxWidth="280" Margin="0,0,0,8" Visibility="Collapsed"/>
+                <ItemsControl x:Name="CodexBars" ItemTemplate="{StaticResource UsageBarTemplate}">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <WrapPanel HorizontalAlignment="Center"/>
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                </ItemsControl>
+            </StackPanel>
             <TextBlock x:Name="UpdateText" Foreground="#FF60A5FA" FontSize="10.5"
                        HorizontalAlignment="Center" Margin="0,4,0,0" Visibility="Collapsed"
                        Cursor="Hand" MouseLeftButtonUp="Update_Click"/>

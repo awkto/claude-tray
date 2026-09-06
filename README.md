@@ -15,6 +15,8 @@ proper desktop tray app instead of a ported dedicated-hardware dashboard.
 - **Compact flyout** — click the tray icon and a small popup appears right next to the tray with
   **vertical bars**, one per limit bucket (5-hour session, 7-day all models, 7-day **Fable**, and any
   future scoped limits Anthropic adds), each with a percentage and reset countdown.
+- **Optional ChatGPT/Codex limits** — the Windows flyout can also show the rate-limit windows from
+  your existing Codex CLI ChatGPT sign-in. These are display-only and never change the Claude tray icon.
 - **Streamlined auth** — sign in with your Claude account directly (OAuth), or auto-import existing
   Claude Code credentials, including from **WSL** (`\\wsl$\...\.claude\.credentials.json`). No manual
   JSON-file hunting.
