@@ -82,9 +82,10 @@ jobs:
       - name: Pack extension
         run: |
           bash tools/pack-gnome.sh dist
-          cd dist && sha256sum *.zip > gnome-extension.sha256
+          bash tools/pack-deb.sh "${GITHUB_REF_NAME#v}" dist
+          cd dist && sha256sum *.zip *.deb > linux-assets.sha256
 
       - name: Upload to release
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release upload "$GITHUB_REF_NAME" dist/*.zip dist/gnome-extension.sha256
+        run: gh release upload "$GITHUB_REF_NAME" dist/*.zip dist/*.deb dist/linux-assets.sha256

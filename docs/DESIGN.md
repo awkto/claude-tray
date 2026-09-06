@@ -31,6 +31,11 @@ each primary/secondary quota window into a flyout bar. It is intentionally disco
 tray icon, tooltip, and notification pipeline. On Windows it tries native Codex first, then Codex
 in the default WSL distro.
 
+The GNOME extension uses the same app-server handshake through `Gio.Subprocess` when its opt-in
+Codex setting is enabled. It renders a separate popup section but leaves the panel icon and Claude
+notification logic unchanged. Linux releases include both a per-user GNOME extension zip and an
+`Architecture: all` Debian package that installs the extension under `/usr/share/gnome-shell/extensions`.
+
 ### Data source
 
 `GET https://api.anthropic.com/api/oauth/usage`

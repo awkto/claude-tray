@@ -44,6 +44,14 @@ export default class ClaudeTrayPreferences extends ExtensionPreferences {
         settings.bind('poll-interval-seconds', interval, 'value', Gio.SettingsBindFlags.DEFAULT);
         general.add(interval);
 
+        addSwitch(general, settings, 'show-codex-limits', 'Show ChatGPT/Codex limits in the popup');
+
+        const codexCommand = new Adw.EntryRow({
+            title: 'Codex executable (empty = auto-detect)',
+        });
+        settings.bind('codex-command', codexCommand, 'text', Gio.SettingsBindFlags.DEFAULT);
+        general.add(codexCommand);
+
         addSwitch(general, settings, 'show-percent-label', 'Show percentage in the top bar');
 
         const buckets = ['worst', 'session', 'weekly_all', 'weekly_scoped'];

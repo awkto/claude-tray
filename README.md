@@ -58,7 +58,23 @@ See [docs/DESIGN.md](docs/DESIGN.md) for the full design.
 The Ubuntu version is a GNOME Shell extension: a color-coded Clawd indicator in the top bar
 with a popup showing the vertical usage bars, and desktop notifications at your alert threshold.
 It reads (and refreshes) your Claude Code credentials from `~/.claude/.credentials.json` — just
-be signed in with `claude login`.
+be signed in with `claude login`. Optionally, the popup also reads ChatGPT/Codex rate limits from
+an installed Codex CLI signed in with ChatGPT; those limits never affect the top-bar icon or notifications.
+
+Install from the awkto APT repository (system-wide extension, recommended):
+
+If migrating from the release zip, first run
+`gnome-extensions uninstall claude-tray@awkto.github.io`; otherwise the old per-user copy can
+shadow the APT-managed system copy.
+
+```bash
+curl -fsSL https://gist.githubusercontent.com/awkto/7630588151f0a5c52c32efdff693d98e/raw/add-awkto-apt.sh \
+  | bash -s -- claude-tray
+# Log out and back in once, then:
+gnome-extensions enable claude-tray@awkto.github.io
+```
+
+Or install the release zip for the current user:
 
 ```bash
 wget https://github.com/awkto/claude-tray/releases/latest/download/claude-tray@awkto.github.io.shell-extension.zip

@@ -1,0 +1,31 @@
+claude-tray for Debian and Ubuntu
+=================================
+
+This package installs the extension system-wide at:
+
+  /usr/share/gnome-shell/extensions/claude-tray@awkto.github.io
+
+GNOME Shell extensions are enabled per user, so the package deliberately does
+not change dconf settings from its root post-installation process.
+
+If you previously installed the release zip, uninstall that per-user copy
+before installing this package so it does not shadow the system copy:
+
+  gnome-extensions uninstall claude-tray@awkto.github.io
+
+After the first installation, log out and back in, then run as your desktop
+user:
+
+  gnome-extensions enable claude-tray@awkto.github.io
+
+Open settings with:
+
+  gnome-extensions prefs claude-tray@awkto.github.io
+
+APT upgrades replace the system extension files in place. Restart the GNOME
+session after an upgrade if the running shell has not picked up the new code.
+
+ChatGPT/Codex limits require a Codex CLI installation signed in with ChatGPT.
+The extension searches PATH, ~/.local/bin/codex, ~/.npm-global/bin/codex,
+/usr/local/bin/codex, and /usr/bin/codex. A custom path can be set in the
+extension preferences.
